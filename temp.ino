@@ -1,4 +1,5 @@
 // from https://github.com/adafruit/DHT-sensor-library/tree/26e2bc1d793fba7f6db41a9f7ce0499b0ab3c622
+// and https://github.com/adafruit/Light-and-Temp-logger/blob/ab6b49f22e7f6210ded222e647d6429ee936611f/lighttemplogger.pde
 
 #include "DHT.h"
 
@@ -23,13 +24,13 @@ void setup() {
 void loop() {
   // Reading temperature takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  float t = dht.readTemperature(true);
+  float temp = dht.readTemperature(true);
 
   // check if returns are valid, if they are NaN (not a number) then something went wrong!
-  if (isnan(t)) {
+  if (isnan(temp)) {
     Serial.println("Failed to read from DHT");
   } else {
-    Serial.print(t);
+    Serial.print(temp);
     Serial.println(" *F");
   }
 }
