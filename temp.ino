@@ -9,6 +9,8 @@
 
 #include "DHT.h"
 #include <SD.h>
+#include <Wire.h>
+#include "RTClib.h"
 
 #define DHTPIN 2     // what pin we're connected to
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
@@ -18,6 +20,9 @@ const int chipSelect = 10;
 
 // the temperature sensor
 DHT dht(DHTPIN, DHTTYPE);
+
+RTC_DS1307 rtc;
+
 
 void setup() {
   Serial.begin(9600); 
@@ -30,12 +35,25 @@ void setup() {
   pinMode(10, OUTPUT);
   
   // see if the card is present and can be initialized:
-  if (!SD.begin(chipSelect)) {
+  if (SD.begin(chipSelect)) {
+    Serial.println("card initialized.");  
+  } else {
     Serial.println("Card failed, or not present");
-    // don't do anything more:
-    return;
   }
-  Serial.println("card initialized.");
+  
+  
+  #ifdef AVR
+  Wire.begin();
+#else
+  Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
+#endif
+  rtc.begin();
+
+  if (! rtc.isrunning()) {
+    Serial.println("RTC is NOT running!");
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(__DATE__, __TIME__));
+  }
 }
 
 void loop() {
@@ -47,8 +65,27 @@ void loop() {
   if (isnan(temp)) {
     Serial.println("Failed to read from DHT");
   } else {
-    Serial.print(temp);
-    Serial.println(" *F");
+    String dataString = "";
+
+    DateTime now = rtc.now();
+    dataString += now.month();
+    dataString += '/';
+    dataString += now.day();
+    dataString += '/';
+    dataString += now.year();
+    dataString += ' ';
+    dataString += now.hour();
+    dataString += ':';
+    dataString += now.minute();
+    dataString += ':';
+    dataString += now.second();
+
+    dataString += ',';
+    char tempStr[5];
+    dtostrf(temp, 5, 2, tempStr);
+    dataString += tempStr;
+
+    Serial.println(dataString);
     
     // open the file. note that only one file can be open at a time,
     // so you have to close this one before opening another.
@@ -56,7 +93,7 @@ void loop() {
   
     // if the file is available, write to it:
     if (dataFile) {
-      dataFile.println(temp);
+      dataFile.println(dataString);
       dataFile.close();
     }  
     // if the file isn't open, pop up an error:
