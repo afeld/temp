@@ -12,15 +12,18 @@
 #include <Wire.h>
 #include "RTClib.h"
 
-#define DHTPIN 2     // what pin we're connected to
-#define DHTTYPE DHT22   // DHT 22  (AM2302)
-
-// CS pin for SD card
-const int chipSelect = 10;
-
+// what pin we're connected to
+#define DHTPIN 2
+// DHT 22  (AM2302)
+#define DHTTYPE DHT22
 // the temperature sensor
 DHT dht(DHTPIN, DHTTYPE);
 
+// how many milliseconds between grabbing data and logging it
+#define LOG_INTERVAL 1000
+
+// CS pin for SD card
+const int chipSelect = 10;
 RTC_DS1307 rtc;
 
 
@@ -28,7 +31,6 @@ void setup() {
   Serial.begin(9600); 
 
   dht.begin();
-
 
   // make sure that the default chip select pin is set to
   // output, even if it's not used
@@ -42,7 +44,7 @@ void setup() {
   }
   
   
-  #ifdef AVR
+#ifdef AVR
   Wire.begin();
 #else
   Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
@@ -57,6 +59,9 @@ void setup() {
 }
 
 void loop() {
+  // delay for the amount of time we want between readings
+  delay((LOG_INTERVAL -1) - (millis() % LOG_INTERVAL));
+  
   // Reading temperature takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float temp = dht.readTemperature(true);
